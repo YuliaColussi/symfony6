@@ -1,6 +1,9 @@
 <?php
 namespace App\Controller;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use function Symfony\Component\String\u;
+
 class VinylController
 {
     #[Route('/')]
@@ -9,9 +12,15 @@ class VinylController
         die('Vinyl: Definitely NOT a fancy-looking frisbee!');
     }
 
-    #[Route('/hello')]
-    public function homepage2()
+    #[Route('/browse/{slug}')]
+    public function browse(string $slug = null)
     {
-        die('Vinyl: Definitely NOT a fancy-looking frisbee!');
+        if($slug)  {
+            $title = 'Genre: ' . u(str_replace('-', ' ', $slug))->title(true);
+        } else  {
+            $title = 'All genres';
+        }
+
+        return new Response($title);
     }
 }
