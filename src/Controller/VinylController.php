@@ -1,38 +1,51 @@
 <?php
+
 namespace App\Controller;
 
-use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use function Symfony\Component\String\u;
+use Symfony\Contracts\Cache\CacheInterface;
+use Knp\Bundle\TimeBundle\DateTimeFormatter;
+use Psr\Cache\CacheItemInterface;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
-
-use function Symfony\Component\String\u;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 
 class VinylController extends AbstractController
 {
     #[Route('/', name: 'app_homepage')]
-    public function homepage()
+    public function homepage(): Response
     {
-
         $tracks = [
-            ['song' => 'hello1', 'artist' => 'op2' ],
-            ['song' => 'hello1', 'artist' => 'op2' ],
-            ['song' => 'hello1', 'artist' => 'op2' ]
+            ['song' => 'Gangsta\'s Paradise', 'artist' => 'Coolio'],
+            ['song' => 'Waterfalls', 'artist' => 'TLC'],
+            ['song' => 'Creep', 'artist' => 'Radiohead'],
+            ['song' => 'Kiss from a Rose', 'artist' => 'Seal'],
+            ['song' => 'On Bended Knee', 'artist' => 'Boyz II Men'],
+            ['song' => 'Fantasy', 'artist' => 'Mariah Carey'],
         ];
-        
-       return $this->render('vinyl/homepage.html.twig', [
-        'title' => 'Adam Sandler',
-        'tracks' => $tracks
-       ]);
+
+        return $this->render('vinyl/homepage.html.twig', [
+            'title' => 'PB & Jams',
+            'tracks' => $tracks,
+        ]);
     }
 
     #[Route('/browse/{slug}', name: 'app_browse')]
-    public function browse(string $slug = null)
+    public function browse(HttpClientInterface $httpClient, CacheInterface $cache, string $slug = null): Response
     {
-       $genre =  $slug ? u(str_replace('-', ' ', $slug))->title(true) : 'All genres';
-
+        dump($cache);
+        $genre = $slug ? u(str_replace('-', ' ', $slug))->title(true) : null;
+        $mixes = $cache->get('mixes data', function(CacheItemInterface $cacheItemInterface) use($httpClient) {
+            $cacheItemInterface->expiresAfter(5);
+            $response = $httpClient->request('GET', 'https://raw.githubusercontent.com/SymfonyCasts/vinyl-mixes/main/mixes.json');
+        
+        return $response->toArray();
+        });
+        
         return $this->render('vinyl/browse.html.twig', [
-            'title' => 'Adam Sandler',
-            'genre' => $genre
-           ]);
+            'genre' => $genre,
+            'mixes' => $mixes
+        ]);
     }
 }
